@@ -1,5 +1,17 @@
-export type MyReturnType<T extends (...arg: any) => any> = T extends (...arg: any) => infer R
+export type MyReturnType<T extends (...arg: any) => any> = T extends (
+  ...arg: any
+) => infer R
   ? R
   : any;
 
 export type MyTypeOne<T, K extends keyof T> = T[K];
+
+export interface FFmpegArgs {
+  psetartion: {
+    whether: boolean;
+    downlevel: {
+      noaudio?: boolean;
+      novideo?: boolean;
+    };
+  };
+}

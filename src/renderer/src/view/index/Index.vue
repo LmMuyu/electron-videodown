@@ -1,55 +1,68 @@
 <template>
   <ElContainer>
-    <ElMain>
-      <ElRow>
-        <ElCol :span="6" class="flex items-center">
-          <span class="text-el-primary font-bold whitespace-nowrap">平台：</span>
-          <el-select v-model="downLoadOps.platform" class="m-2" placeholder="Select">
-            <el-option
-              v-for="item in downLoadOps.SelectOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </ElCol>
-        <ElCol :span="10" class="flex items-center justify-center">
-          <el-input v-model="downLoadOps.link" placeholder="输入连接" />
-        </ElCol>
-        <ElCol :span="3" class="flex justify-center items-center">
-          <ElButton @click="downloadPlatformVideo" type="primary" class="px-7">下载</ElButton>
-        </ElCol>
-        <ElCol :span="3" class="flex items-center justify-center">
-          <el-radio-group @click="AudioVideoSeparation" v-model="downLoadOps.AVSeparation">
-            <el-radio :label="!downLoadOps.AVSeparation"> 音视频分离 </el-radio>
-          </el-radio-group>
-        </ElCol>
-        <ElCol :span="2" class="flex items-center justify-center">
-          <router-link to="" class="text-sm text-el-brand"> 下载设置 </router-link>
-        </ElCol>
-      </ElRow>
-    </ElMain>
-    <ElAside width="25vw" class="px-4">
-      <div v-if="findDbVideo.lists.value.length > 0">
-        <ElRow
-          class="py-2"
-          :align="'middle'"
-          v-for="video in findDbVideo.lists.value"
-          :key="video.vid"
-          @click="toVideoDetail(video)"
-        >
-          <ElCol :span="4">
-            <svg class="icon" aria-hidden="true">
-              <use xlink:href="icon-shipin"></use>
-            </svg>
+    <ElMain class="h-full">
+      <div class="flex items-center justify-center">
+        <ElRow style="width: 75vw">
+          <ElCol :span="6" class="flex items-center">
+            <span class="text-el-primary font-bold whitespace-nowrap"
+              >平台：</span
+            >
+            <el-select
+              v-model="downLoadOps.platform"
+              class="m-2"
+              placeholder="Select"
+            >
+              <el-option
+                v-for="item in downLoadOps.SelectOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
           </ElCol>
-          <ElCol :span="20" class="flex flex-col">
-            <span class="truncate text-el-primary text-sm">{{ video.videoname }}</span>
-            <span class="py-2 text-xs from-neutral-400">{{ video.createtime }}</span>
+          <ElCol :span="10" class="flex items-center justify-center">
+            <el-input v-model="downLoadOps.link" placeholder="输入连接" />
+          </ElCol>
+          <ElCol :span="3" class="flex justify-center items-center">
+            <ElButton
+              @click="downloadPlatformVideo"
+              type="primary"
+              class="px-7 text-el-brand"
+              >下载</ElButton
+            >
+          </ElCol>
+          <ElCol :span="3" class="flex items-center justify-center">
+            <el-radio-group
+              @click.stop.prevent="AudioVideoSeparation"
+              v-model="downLoadOps.AVSeparation"
+            >
+              <el-radio label="1"> 音视频分离 </el-radio>
+            </el-radio-group>
+          </ElCol>
+          <ElCol :span="2" class="flex items-center justify-center">
+            <router-link to="" class="text-sm text-el-brand">
+              下载设置
+            </router-link>
           </ElCol>
         </ElRow>
       </div>
-    </ElAside>
+
+      <ElContainer class="transform-gpu translate-y-5">
+        <ElMain class="flex">
+          <div style="flex: 1"></div>
+          <div style="flex: 5" class="grid grid-cols-5 gap-2">
+            <div v-for="(_, index) in 10" :key="index">
+              <el-image
+                class="h-32"
+                src="https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg"
+              />
+              <div class="h-10"></div>
+            </div>
+          </div>
+          <div style="flex: 1"></div>
+        </ElMain>
+      </ElContainer>
+    </ElMain>
   </ElContainer>
 </template>
 <script setup lang="ts">
@@ -61,7 +74,6 @@ import { videodetail } from "../videodetail/videodetail";
 import {
   ElContainer,
   ElMain,
-  ElAside,
   ElRow,
   ElCol,
   ElSelect,
@@ -70,8 +82,10 @@ import {
   ElButton,
   ElRadioGroup,
   ElRadio,
+  ElImage,
 } from "element-plus";
 import { ipcReturnInfo } from "../../../../main/ipc/downloadvideo/instance";
+// import f from "../../components/NotableWind.vue";
 
 interface SelectOptionType {
   label: string;
@@ -81,12 +95,12 @@ interface SelectOptionType {
 const downLoadOps = reactive<{
   platform: string;
   SelectOptions: SelectOptionType[];
-  AVSeparation: boolean;
+  AVSeparation: "1" | "2";
   link: string;
 }>({
   platform: "抖音",
   SelectOptions: [],
-  AVSeparation: false,
+  AVSeparation: "2",
   link: "https://v.douyin.com/6DJkJQD/",
 });
 
@@ -103,7 +117,9 @@ async function downloadPlatformVideo() {
     //@ts-ignore
     const ipcMainDownVideoInfo = await window.api.ipcRenderer.invoke(
       "DownloadVideo",
-      toRaw(downLoadOps)
+      Object.assign({}, toRaw(downLoadOps), {
+        AVSeparation: downLoadOps.AVSeparation === "1",
+      })
     );
 
     //@ts-ignore
@@ -140,12 +156,8 @@ function toVideoDetail(videoinfo: ipcReturnInfo) {
   });
 }
 
-function AudioVideoSeparation() {
-  console.log(downLoadOps.AVSeparation);
-
-  if (!downLoadOps.AVSeparation) {
-    downLoadOps.AVSeparation = true;
-  }
+async function AudioVideoSeparation() {
+  downLoadOps.AVSeparation = downLoadOps.AVSeparation === "1" ? "2" : "1";
 }
 </script>
 <style scoped lang="scss"></style>

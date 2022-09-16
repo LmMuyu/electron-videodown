@@ -4,3 +4,4 @@ out
 *.log*
 data
 build
+bin/ffmpeg
