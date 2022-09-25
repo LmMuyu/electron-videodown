@@ -28,4 +28,6 @@ function mittRealTime() {
   return mitt;
 }
 
-export default mittRealTime();
+const mitt = mittRealTime();
+
+export default mitt;

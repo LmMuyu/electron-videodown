@@ -1,5 +1,6 @@
-import fs from "fs";
-import path, { resolve } from "path";
+import * as fs from "fs";
+import { resolve } from "path";
+import * as path from "path";
 import { promisify } from "util";
 
 type ReadFileStatus = "success" | "error" | "noexist";

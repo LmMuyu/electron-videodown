@@ -80,7 +80,7 @@ function RestoringDefaultSettings(path: string) {
   });
 }
 
-async function localVideoSavePath(filename: string) {
+export async function localVideoSavePath(filename: string) {
   try {
     const savePathConfJson = join(process.cwd(), "/src/conf/renderer.json");
     let status = await readFile(savePathConfJson);

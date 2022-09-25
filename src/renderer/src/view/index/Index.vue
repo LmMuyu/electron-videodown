@@ -50,13 +50,16 @@
       <ElContainer class="transform-gpu translate-y-5">
         <ElMain class="flex">
           <div style="flex: 1"></div>
-          <div style="flex: 5" class="grid grid-cols-5 gap-2">
-            <div v-for="(_, index) in 10" :key="index">
-              <el-image
-                class="h-32"
-                src="https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg"
-              />
-              <div class="h-10"></div>
+          <div
+            style="flex: 5"
+            class="grid grid-cols-5 gap-2"
+            v-if="findDbVideo.lists.value.length > 0"
+          >
+            <div v-for="(video, index) in findDbVideo.lists.value" :key="index">
+              <el-image class="w-full h-auto" :src="video.videoCover" />
+              <div style="height: 15vh">
+                <span class="truncate">{{ video.videoname }}</span>
+              </div>
             </div>
           </div>
           <div style="flex: 1"></div>
@@ -87,6 +90,8 @@ import {
 import { ipcReturnInfo } from "../../../../main/ipc/downloadvideo/instance";
 // import f from "../../components/NotableWind.vue";
 
+import type { FFmpegArgs, MyExclude } from "../../../../type/commom";
+
 interface SelectOptionType {
   label: string;
   value: string;
@@ -97,10 +102,21 @@ const downLoadOps = reactive<{
   SelectOptions: SelectOptionType[];
   AVSeparation: "1" | "2";
   link: string;
+  FFmpegArgs: MyExclude<FFmpegArgs, "originPath">;
 }>({
   platform: "抖音",
   SelectOptions: [],
   AVSeparation: "2",
+  //ffmpeg配置
+  FFmpegArgs: {
+    psetartion: {
+      whether: false,
+      downlevel: {
+        noaudio: false,
+        novideo: false,
+      },
+    },
+  },
   link: "https://v.douyin.com/6DJkJQD/",
 });
 
@@ -111,33 +127,53 @@ async function downloadPlatformVideo() {
 
   if (linkIsConform(downLoadOps.link.trim())) {
     const filpMess = new FilpMessage();
+    const LaestCloseTime = 2000;
 
+    const filpTime = Date.now();
     filpMess.filp();
 
-    //@ts-ignore
-    const ipcMainDownVideoInfo = await window.api.ipcRenderer.invoke(
-      "DownloadVideo",
-      Object.assign({}, toRaw(downLoadOps), {
-        AVSeparation: downLoadOps.AVSeparation === "1",
-      })
-    );
-
+    //最大限制下载视频
     //@ts-ignore
     timer = setTimeout(() => {
       filpMess.cancel();
-      //@ts-ignore
-      clearTimeout(timer);
+      timer && clearTimeout(timer);
       timer = null;
     }, 1000 * 30);
 
+    const ipcMainDownVideoInfo: {
+      info: ipcReturnInfo;
+      type: "success" | "error";
+      //@ts-ignore
+    } = await window.api.ipcRenderer.invoke(
+      "DownloadVideo",
+      Object.assign({}, toRaw(downLoadOps))
+    );
+
     const { info, type } = ipcMainDownVideoInfo;
-    console.log(info);
 
     if (type !== "error") {
       findDbVideo.lists.value.push(info);
     } else {
+      console.log(info);
     }
-    filpMess.cancel();
+
+    const diffTime = Date.now() - filpTime;
+
+    if (diffTime > LaestCloseTime) {
+      filpMess.cancel();
+    } else {
+      //@ts-ignore
+      timer = setTimeout(() => {
+        filpMess.cancel();
+        timer && clearTimeout(timer);
+        timer = null;
+      }, LaestCloseTime);
+    }
+
+    //是否分离音视频
+    if (downLoadOps.AVSeparation === "1" && type !== "error") {
+      ffmpegSeparationVideo(info.savePath);
+    }
   }
 }
 
@@ -158,6 +194,21 @@ function toVideoDetail(videoinfo: ipcReturnInfo) {
 
 async function AudioVideoSeparation() {
   downLoadOps.AVSeparation = downLoadOps.AVSeparation === "1" ? "2" : "1";
+}
+
+async function ffmpegSeparationVideo(originPath: string) {
+  const FFmpegArgs = {
+    originPath,
+    psetartion: Object.assign(toRaw(downLoadOps.FFmpegArgs.psetartion), {
+      whether: true,
+    }),
+  } as FFmpegArgs;
+
+  //@ts-ignore
+  const savepath = await window.api.ipcRenderer.invoke(
+    "separationvideo",
+    FFmpegArgs
+  );
 }
 </script>
 <style scoped lang="scss"></style>

@@ -1,8 +1,9 @@
+import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import { app, shell, BrowserWindow } from "electron";
 import * as path from "path";
-import { electronApp, optimizer, is } from "@electron-toolkit/utils";
-
 import "./ipc";
+
+const processlog = path.join(process.cwd(), "/logs/process.log");
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -53,4 +54,8 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+process.on("unhandledRejection", (err) => {
+  console.log(err);
 });

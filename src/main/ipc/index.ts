@@ -1,3 +1,6 @@
 import videoDownLoad from "./downloadvideo";
+import useIpcMainSeparationvideo from "./ffmpeg/separationAV";
 
-export { videoDownLoad };
+const separationvideo = useIpcMainSeparationvideo();
+
+export { videoDownLoad, separationvideo };
